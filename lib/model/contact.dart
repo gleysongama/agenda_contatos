@@ -35,11 +35,11 @@ class Contact {
   }
 
   Contact.fromMap(Map map) {
-    id(map[idColumn]);
-    name([nameColumn]);
-    email(map[emailColumn]);
-    phone(map[phoneColumn]);
-    img(map[imgColumn]);
+    id = map[idColumn];
+    name = map[nameColumn];
+    email = map[emailColumn];
+    phone = map[phoneColumn];
+    img = map[imgColumn];
   }
 
   Map toMap() {
