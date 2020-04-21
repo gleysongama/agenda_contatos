@@ -3,7 +3,14 @@ import 'dart:ui';
 
 import 'package:agendacontatoss/helpers/contact_helper.dart';
 import 'package:agendacontatoss/model/contact.dart';
+import 'package:agendacontatoss/ui/contact_page.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+enum OrderOptions {
+  orderaz,
+  orderza
+}
 
 class HomePage extends StatefulWidget {
   @override
@@ -21,52 +28,8 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
 
-    helper.getAll().then((list) {
-      if(list.length > 0) {
-        setState(() {
-          contacts = list;
-        });
-      } else {
-        Contact c = Contact();
-        c.name = "Gleyson Gama";
-        c.email = "gleysongama@gmail.com";
-        c.phone = "91980893469";
-        c.img = "imgtest";
-
-        Contact a = Contact();
-        a.name = "Ana Paula Pereira Gama";
-        a.email = "anapaula.gama2018@gmail.com";
-        a.phone = "91980893469";
-        a.img = "imgtest";
-
-        helper.save(c);
-        helper.save(a);
-
-        helper.getAll().then((list) {
-          setState(() {
-            contacts = list;
-          });
-        });
-      }
-    });
+    _getAllContacts();
   }
-
-  /*@override
-  void initState() {
-    super.initState();
-
-    *//*Contact c = Contact();
-    c.name = "Gleyson Gama";
-    c.email = "gleysongama@gmail.com";
-    c.phone = "91980893469";
-    c.img = "imgtest";*//*
-
-    helper.save(c);
-
-    helper.getAll().then((list){
-      print(list);
-    });
-  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -75,10 +38,27 @@ class _HomePageState extends State<HomePage> {
         title: Text("Contatos"),
         backgroundColor: Colors.red,
         centerTitle: true,
+        actions: <Widget>[
+          PopupMenuButton<OrderOptions>(
+            itemBuilder: (context) => <PopupMenuEntry<OrderOptions>>[
+              const PopupMenuItem<OrderOptions>(
+                child: Text("Ordernar de A-Z"),
+                value: OrderOptions.orderaz,
+              ),
+              const PopupMenuItem<OrderOptions>(
+                child: Text("Ordernar de Z-A"),
+                value: OrderOptions.orderza,
+              )
+            ],
+            onSelected: _orderList,
+          ),
+        ],
       ),
       backgroundColor: Colors.white,
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          _showContactPage();
+        },
         child: Icon(Icons.add),
         backgroundColor: Colors.red,
       ),
@@ -102,8 +82,8 @@ class _HomePageState extends State<HomePage> {
               Expanded(
                 flex: 2,
                 child: Container(
-                  width: 80.0,
-                  height: 80.0,
+                  width: 62.0,
+                  height: 62.0,
                   decoration: BoxDecoration(
                     color: Colors.amberAccent,
                     shape: BoxShape.circle,
@@ -125,7 +105,7 @@ class _HomePageState extends State<HomePage> {
                       Text(
                         contacts[index].name ?? "",
                         style: TextStyle(
-                            fontSize: 22.0,
+                            fontSize: 18.0,
                             fontWeight: FontWeight.bold
                         ),
                         overflow: TextOverflow.ellipsis,
@@ -133,14 +113,14 @@ class _HomePageState extends State<HomePage> {
                       Text(
                         contacts[index].email ?? "",
                         style: TextStyle(
-                          fontSize: 18.0,
+                          fontSize: 14.0,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
                         contacts[index].phone ?? "",
                         style: TextStyle(
-                          fontSize: 18.0,
+                          fontSize: 14.0,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -152,6 +132,141 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
+      onTap: () {
+        _showOptions(context, index);
+      },
     );
   }
+
+  void _showOptions(BuildContext context, int index){
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return BottomSheet(
+          onClosing: () {},
+          builder: (context) {
+            return Container(
+              padding: EdgeInsets.all(10.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Padding(
+                    padding: EdgeInsets.all(10.0),
+                    child: FlatButton(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Icon(Icons.phone),
+                          Text(
+                            "Ligar",
+                            style: TextStyle(
+                                color: Colors.green,
+                                fontSize: 20.0
+                            ),
+                          ),
+                        ],
+                      ),
+                      onPressed: () {
+                        launch("tel:${contacts[index].phone}");
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(10.0),
+                    child: FlatButton(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Icon(Icons.update),
+                          Text(
+                            "Editar",
+                            style: TextStyle(
+                                color: Colors.blue,
+                                fontSize: 20.0
+                            ),
+                          ),
+                        ],
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _showContactPage(contact: contacts[index]);
+                      },
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(10.0),
+                    child: FlatButton(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Icon(Icons.delete),
+                          Text(
+                            "Excluir",
+                            style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 20.0
+                            ),
+                          ),
+                        ],
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        helper.delete(contacts[index].id);
+                        _getAllContacts();
+                      },
+                    ),
+                  )
+                ],
+              ),
+            );
+          },
+        );
+      }
+    );
+  }
+
+  void _showContactPage({Contact contact}) async {
+    final recContact = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ContactPage(contact: contact,)
+                        ));
+
+    if(recContact != null) {
+      if(contact != null) {
+        await helper.update(recContact);
+      } else {
+        await helper.save(recContact);
+      }
+      _getAllContacts();
+    }
+  }
+
+  void _getAllContacts() {
+    helper.getAll().then((list) {
+      setState(() {
+        contacts = list;
+      });
+    });
+  }
+
+  void _orderList(OrderOptions result) {
+    switch(result) {
+      case OrderOptions.orderaz:
+        contacts.sort((a, b) {
+          return a.name.toString().toLowerCase().compareTo(b.name.toString().toLowerCase());
+        });
+        break;
+      case OrderOptions.orderza:
+        contacts.sort((a, b) {
+          return b.name.toString().toLowerCase().compareTo(a.name.toString().toLowerCase());
+        });
+        break;
+    }
+    setState(() {
+
+    });
+  }
+
 }
